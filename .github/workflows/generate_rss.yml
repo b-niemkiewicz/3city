@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: "0 6,18 * * *"  # dwa razy dziennie: 6:00 i 18:00 UTC
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,7 +24,7 @@ jobs:
     - name: Run Python script
       run: python trojmiasto_rss.py
 
-      - name: Commit RSS file
+    - name: Commit RSS file
       env:
         TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
