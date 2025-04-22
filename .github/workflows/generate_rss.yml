@@ -24,13 +24,14 @@ jobs:
     - name: Run Python script
       run: python trojmiasto_rss.py
 
-    - name: Commit RSS file
+      - name: Commit RSS file
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git config user.name "GitHub Actions Bot"
+        git config user.email "bot@github.com"
+        git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
         git pull --rebase
         git add trojmiasto_rss.xml
-        git commit -m "Aktualizacja RSS `date`" || echo "Brak zmian"
-        git push origin HEAD:${{ github.ref_name }}
+        git commit -m "Automatyczna aktualizacja RSS `date`" || echo "Brak zmian"
+        git push
