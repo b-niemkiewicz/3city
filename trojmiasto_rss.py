@@ -49,6 +49,8 @@ def fetch_articles():
         image = "https://www.trojmiasto.pl" + img_tag['src'] if img_tag else ''
         pub_date = parse_polish_date(date_tag.text.strip()) if date_tag else datetime.now()
 
+        print(f"Znaleziono artykuł: {title}")  # <-- Dodajemy print, by zobaczyć tytuły
+
         articles.append({
             'title': title,
             'link': link,
@@ -57,6 +59,7 @@ def fetch_articles():
             'pubDate': pub_date,
         })
 
+    print(f"Znaleziono {len(articles)} artykułów.")  # <-- Informacja o liczbie artykułów
     return articles
 
 def generate_rss(articles):
