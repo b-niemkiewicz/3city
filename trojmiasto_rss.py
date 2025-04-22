@@ -12,6 +12,8 @@ except locale.Error:
 
 URL = "https://www.trojmiasto.pl/wiadomosci/"
 
+from datetime import datetime, timezone
+
 def parse_polish_date(date_str):
     months = {
         'stycznia': '01', 'lutego': '02', 'marca': '03', 'kwietnia': '04',
@@ -24,9 +26,10 @@ def parse_polish_date(date_str):
         day, month_name, year = parts
         month = months.get(month_name.lower())
         if month:
-            return datetime.strptime(f"{day}.{month}.{year}", "%d.%m.%Y")
+            dt = datetime.strptime(f"{day}.{month}.{year}", "%d.%m.%Y")
+            return dt.replace(tzinfo=timezone.utc)
 
-    return datetime.now()  # fallback
+    return datetime.now(timezone.utc)  # fallback z UTC
 
 def fetch_articles():
     response = requests.get(URL)
