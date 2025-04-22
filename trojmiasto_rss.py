@@ -31,25 +31,21 @@ def fetch_articles():
     soup = BeautifulSoup(response.text, 'html.parser')
     articles = []
 
-    for item in soup.select('div.news-list > div')[:15]:  # ograniczamy do 15 najnowszych
-        title_tag = item.select_one('h2 a')
-        desc_tag = item.select_one('.short')
-        img_tag = item.select_one('img')
-        date_tag = item.select_one('.date')
+    # wybieramy artykuły
+    for item in soup.select('article.newsList__article')[:15]:
+        title_tag = item.select_one('h4.newsList__title a')
+        desc_tag = item.select_one('p.newsList__desc')
+        img_tag = item.select_one('div.newsList__img img')
+        date_tag = item.select_one('span.newsList__date')
 
         if not title_tag:
             continue
 
         title = title_tag.get_text(strip=True)
         link = title_tag['href']
-        if not link.startswith("http"):
-            link = "https://www.trojmiasto.pl" + link
-
         description = desc_tag.get_text(strip=True) if desc_tag else ''
-        image = "https://www.trojmiasto.pl" + img_tag['src'] if img_tag else ''
+        image = img_tag['src'] if img_tag else ''
         pub_date = parse_polish_date(date_tag.text.strip()) if date_tag else datetime.now()
-
-        print(f"Znaleziono artykuł: {title}")  # <-- Dodajemy print, by zobaczyć tytuły
 
         articles.append({
             'title': title,
@@ -59,8 +55,9 @@ def fetch_articles():
             'pubDate': pub_date,
         })
 
-    print(f"Znaleziono {len(articles)} artykułów.")  # <-- Informacja o liczbie artykułów
+    print(f"Znaleziono {len(articles)} artykułów.")
     return articles
+
 
 def generate_rss(articles):
     fg = FeedGenerator()
