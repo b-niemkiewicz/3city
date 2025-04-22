@@ -1,0 +1,33 @@
+name: Generate RSS Feed
+
+on:
+  schedule:
+    - cron: "0 6,18 * * *"  # dwa razy dziennie: 6:00 i 18:00 UTC
+  workflow_dispatch:       # opcjonalnie: ręczne uruchomienie
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: pip install requests beautifulsoup4 feedgen
+
+    - name: Run Python script
+      run: python trojmiasto_rss.py
+
+    - name: Commit RSS file
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add trojmiasto_rss.xml
+        git commit -m "Aktualizacja RSS `date`" || echo "Brak zmian"
+        git push
