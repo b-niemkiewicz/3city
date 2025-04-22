@@ -3,8 +3,7 @@ name: Generate RSS Feed
 on:
   schedule:
     - cron: "0 6,18 * * *"  # dwa razy dziennie: 6:00 i 18:00 UTC
-  workflow_dispatch:        # ← DODAJ TO, żeby widzieć przycisk "Run workflow"
-
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
