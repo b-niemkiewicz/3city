@@ -12,6 +12,8 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.PAT_TOKEN }}
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -31,16 +33,10 @@ jobs:
         git config user.name "GitHub Actions Bot"
         git config user.email "bot@github.com"
 
-        # Wyczyść lokalne zmiany
         git reset --hard
-
-        # Ustaw zdalne repo z tokenem
         git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
-
-        # Pobierz najnowsze zmiany
         git pull --rebase
 
-        # Dodaj plik RSS
         git add trojmiasto_rss.xml
         git commit -m "Automatyczna aktualizacja RSS $(date)" || echo "Brak zmian"
         git push
