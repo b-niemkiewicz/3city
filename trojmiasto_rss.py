@@ -12,19 +12,21 @@ except locale.Error:
 
 URL = "https://www.trojmiasto.pl/wiadomosci/"
 
-def parse_polish_date(text):
+def parse_polish_date(date_str):
     months = {
-        'stycznia': 1, 'lutego': 2, 'marca': 3, 'kwietnia': 4, 'maja': 5,
-        'czerwca': 6, 'lipca': 7, 'sierpnia': 8, 'września': 9,
-        'października': 10, 'listopada': 11, 'grudnia': 12
+        'stycznia': '01', 'lutego': '02', 'marca': '03', 'kwietnia': '04',
+        'maja': '05', 'czerwca': '06', 'lipca': '07', 'sierpnia': '08',
+        'września': '09', 'października': '10', 'listopada': '11', 'grudnia': '12'
     }
-    parts = text.split()
-    if len(parts) >= 3:
-        day = int(parts[0])
-        month = months.get(parts[1], 1)
-        year = int(parts[2])
-        return datetime(year, month, day)
-    return datetime.now()
+
+    parts = date_str.strip().split()
+    if len(parts) == 3:
+        day, month_name, year = parts
+        month = months.get(month_name.lower())
+        if month:
+            return datetime.strptime(f"{day}.{month}.{year}", "%d.%m.%Y")
+
+    return datetime.now()  # fallback
 
 def fetch_articles():
     response = requests.get(URL)
