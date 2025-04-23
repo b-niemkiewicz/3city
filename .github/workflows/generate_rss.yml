@@ -12,8 +12,6 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
-      with:
-        token: ${{ secrets.PAT_TOKEN }}
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -26,20 +24,14 @@ jobs:
     - name: Run Python script
       run: python trojmiasto_rss.py
 
-    - name: Pokaż zawartość pliku RSS
-      run: cat trojmiasto_rss.xml
-
-    - name: Commit RSS file
+    - name: Commit RSS and debug file
       env:
         TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         git config user.name "GitHub Actions Bot"
         git config user.email "bot@github.com"
-
-        git reset --hard
         git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
         git pull --rebase
-
-        git add trojmiasto_rss.xml
+        git add trojmiasto_rss.xml debug_trojmiasto.html
         git commit -m "Automatyczna aktualizacja RSS $(date)" || echo "Brak zmian"
         git push
