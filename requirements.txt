@@ -1,3 +1,4 @@
 feedgen
+beautifulsoup4
 requests
 pytz
