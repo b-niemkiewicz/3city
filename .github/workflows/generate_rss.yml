@@ -2,35 +2,36 @@ name: Aktualizacja RSS
 
 on:
   schedule:
-    - cron: '0 * * * *' # co godzinę
-  workflow_dispatch:
+    - cron: '0 * * * *'  # uruchamiane co godzinę
+  workflow_dispatch:  # umożliwia ręczne uruchomienie
 
 jobs:
   update-rss:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.10
+      - name: Ustaw Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+      - name: Instaluj zależności
+        run: pip install -r requirements.txt
 
-    - name: Run script
-      run: python trojmiasto_rss.py
+      - name: Uruchom skrypt aktualizacji RSS
+        run: python trojmiasto_rss.py
 
-    - name: Commit and push if changed
-      env:
-        TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        git config user.name "GitHub Actions Bot"
-        git config user.email "bot@github.com"
-        git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
-        git add trojmiasto_rss.xml debug_trojmiasto.html || true
-        git commit -m "Automatyczna aktualizacja RSS $(date)" || echo "Brak zmian"
-        git push || echo "Brak uprawnień do pushowania"
+      - name: Konfiguracja GIT
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "bot@github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.TOKEN }}@github.com/b-niemkiewicz/3city
+
+      - name: Dodaj i wypchnij zmiany
+        run: |
+          git add trojmiasto_rss.xml debug_trojmiasto.html
+          git commit -m "Automatyczna aktualizacja RSS $(date)" || echo "Brak zmian"
+          git push
