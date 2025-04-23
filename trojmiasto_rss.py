@@ -1,87 +1,33 @@
 import requests
-from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
-from datetime import datetime, timezone
-import locale
+import os
 
-# Ustawienie polskiego języka dla dat (jeśli działa na Twoim systemie)
-try:
-    locale.setlocale(locale.LC_TIME, "pl_PL.UTF-8")
-except locale.Error:
-    pass  # GitHub Actions może nie obsługiwać
+# Sprawdzenie, czy plik XML istnieje
+if not os.path.exists("trojmiasto_rss.xml"):
+    print("Plik XML nie istnieje.")
+else:
+    print(f"Plik XML znajduje się w: {os.path.abspath('trojmiasto_rss.xml')}")
 
-URL = "https://www.trojmiasto.pl/wiadomosci/"
+# Twoja logika do pobierania danych
+response = requests.get("https://example.com/rss_feed.xml")
 
-def parse_polish_date(date_str):
-    months = {
-        'stycznia': '01', 'lutego': '02', 'marca': '03', 'kwietnia': '04',
-        'maja': '05', 'czerwca': '06', 'lipca': '07', 'sierpnia': '08',
-        'września': '09', 'października': '10', 'listopada': '11', 'grudnia': '12'
-    }
+if response.status_code == 200:
+    print("Pobrano dane RSS!")  # Dodaj to, aby zobaczyć, czy dane są pobierane
+else:
+    print("Błąd pobierania danych!")
 
-    parts = date_str.strip().split()
-    if len(parts) == 3:
-        day, month_name, year = parts
-        month = months.get(month_name.lower())
-        if month:
-            dt = datetime.strptime(f"{day}.{month}.{year}", "%d.%m.%Y")
-            return dt.replace(tzinfo=timezone.utc)
+# Generowanie pliku XML
+fg = FeedGenerator()
+fg.title("Tytuł feedu")
+fg.link(href="http://example.com")
+fg.description("Opis feedu")
 
-    return datetime.now(timezone.utc)  # fallback
+# Dodawanie wpisów do feedu
+entry = fg.add_entry()
+entry.title("Przykładowy tytuł")
+entry.link(href="http://example.com/example-post")
+entry.description("Opis wpisu")
 
-def fetch_articles():
-    response = requests.get(URL)
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    # Zapisz stronę do debugowania
-    with open("debug_trojmiasto.html", "w", encoding="utf-8") as f:
-        f.write(soup.prettify())
-
-    articles = []
-    for item in soup.select('article.newsList__article')[:15]:
-        title_tag = item.select_one('h4.newsList__title a')
-        desc_tag = item.select_one('p.newsList__desc')
-        img_tag = item.select_one('div.newsList__img img')
-        date_tag = item.select_one('span.newsList__date')
-
-        if not title_tag:
-            continue
-
-        title = title_tag.get_text(strip=True)
-        link = title_tag['href']
-        description = desc_tag.get_text(strip=True) if desc_tag else ''
-        image = img_tag['src'] if img_tag else ''
-        pub_date = parse_polish_date(date_tag.text.strip()) if date_tag else datetime.now(timezone.utc)
-
-        articles.append({
-            'title': title,
-            'link': link,
-            'description': description,
-            'image': image,
-            'pubDate': pub_date,
-        })
-
-    print(f"Znaleziono {len(articles)} artykułów.")
-    return articles
-
-def generate_rss(articles):
-    fg = FeedGenerator()
-    fg.title("Trójmiasto.pl - Wiadomości")
-    fg.link(href=URL)
-    fg.description("Najnowsze wiadomości z Trójmiasta")
-    fg.language('pl')
-
-    for article in articles:
-        fe = fg.add_entry()
-        fe.title(article['title'])
-        fe.link(href=article['link'])
-        img_html = f'<img src="{article["image"]}" style="max-width:100%;"><br>' if article['image'] else ''
-        fe.description(img_html + article['description'])
-        fe.pubDate(article['pubDate'])
-
-    fg.rss_file('trojmiasto_rss.xml')
-    print("Plik RSS zapisany jako trojmiasto_rss.xml")
-
-if __name__ == "__main__":
-    articles = fetch_articles()
-    generate_rss(articles)
+# Zapisz feed jako XML
+fg.rss_file("trojmiasto_rss.xml")
+print("Plik XML zapisany!")
