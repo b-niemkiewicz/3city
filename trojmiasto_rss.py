@@ -4,11 +4,11 @@ from feedgen.feed import FeedGenerator
 from datetime import datetime, timezone
 import locale
 
-# Ustawienie polskiego języka (może nie działać w GitHub Actions)
+# Ustawienie polskiego języka dla dat (jeśli działa na Twoim systemie)
 try:
     locale.setlocale(locale.LC_TIME, "pl_PL.UTF-8")
 except locale.Error:
-    pass
+    pass  # GitHub Actions może nie obsługiwać
 
 URL = "https://www.trojmiasto.pl/wiadomosci/"
 
@@ -18,6 +18,7 @@ def parse_polish_date(date_str):
         'maja': '05', 'czerwca': '06', 'lipca': '07', 'sierpnia': '08',
         'września': '09', 'października': '10', 'listopada': '11', 'grudnia': '12'
     }
+
     parts = date_str.strip().split()
     if len(parts) == 3:
         day, month_name, year = parts
@@ -25,21 +26,18 @@ def parse_polish_date(date_str):
         if month:
             dt = datetime.strptime(f"{day}.{month}.{year}", "%d.%m.%Y")
             return dt.replace(tzinfo=timezone.utc)
-    return datetime.now(timezone.utc)
+
+    return datetime.now(timezone.utc)  # fallback
 
 def fetch_articles():
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-    }
-    response = requests.get(URL, headers=headers)
-    
-    # Zapisz HTML do podglądu w logach
-    with open("debug_trojmiasto.html", "w", encoding="utf-8") as f:
-        f.write(response.text)
-
+    response = requests.get(URL)
     soup = BeautifulSoup(response.text, 'html.parser')
-    articles = []
 
+    # Zapisz stronę do debugowania
+    with open("debug_trojmiasto.html", "w", encoding="utf-8") as f:
+        f.write(soup.prettify())
+
+    articles = []
     for item in soup.select('article.newsList__article')[:15]:
         title_tag = item.select_one('h4.newsList__title a')
         desc_tag = item.select_one('p.newsList__desc')
@@ -86,6 +84,4 @@ def generate_rss(articles):
 
 if __name__ == "__main__":
     articles = fetch_articles()
-    if not articles:
-        print("UWAGA: Nie znaleziono żadnych artykułów. Sprawdź zawartość debug_trojmiasto.html.")
     generate_rss(articles)
