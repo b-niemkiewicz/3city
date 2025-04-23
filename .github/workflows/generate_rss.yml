@@ -1,39 +1,27 @@
-name: RSS Update Workflow
+name: Automatyczna aktualizacja RSS
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:  # Manual trigger (możliwość ręcznego uruchomienia workflow)
+  schedule:
+    - cron: '0 10 * * *'  # Codziennie o 10:00 UTC
+  workflow_dispatch: # Umożliwia ręczne uruchomienie workflow
 
 jobs:
-  update-rss:
-    runs-on: ubuntu-24.04
+  update_rss:
+    runs-on: ubuntu-22.04
 
     steps:
-      # Sprawdzenie repozytorium
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      # Ustawienie środowiska Pythona
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # Użyj wersji Pythona 3.10
+          python-version: 3.10  # Ustawienie wersji Pythona
 
-      # Instalacja zależności
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Uruchomienie skryptu aktualizacji
-      - name: Run update script
+      - name: Run RSS update script
         run: python trojmiasto_rss.py
-
-      # Opcjonalnie: Przesyłanie pliku XML jako artefakt
-      - name: Upload trojmiasto_rss.xml
-        uses: actions/upload-artifact@v3
-        with:
-          name: trojmiasto_rss
-          path: trojmiasto_rss.xml
