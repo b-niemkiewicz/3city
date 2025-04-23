@@ -4,28 +4,36 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:  # Manual trigger (możliwość ręcznego uruchomienia workflow)
 
 jobs:
   update-rss:
     runs-on: ubuntu-24.04
 
     steps:
-      # Check out the repository
+      # Sprawdzenie repozytorium
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Set up Python environment
+      # Ustawienie środowiska Pythona
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'  # Upewnij się, że używasz wersji, którą chcesz
+          python-version: '3.10'  # Użyj wersji Pythona 3.10
 
-      # Install dependencies
+      # Instalacja zależności
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Run the update script
+      # Uruchomienie skryptu aktualizacji
       - name: Run update script
         run: python trojmiasto_rss.py
+
+      # Opcjonalnie: Przesyłanie pliku XML jako artefakt
+      - name: Upload trojmiasto_rss.xml
+        uses: actions/upload-artifact@v3
+        with:
+          name: trojmiasto_rss
+          path: trojmiasto_rss.xml
