@@ -1,44 +1,52 @@
 import requests
 from feedgen.feed import FeedGenerator
-import os
+from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
 
-# Ustawienie polskiej strefy czasowej
-polish_tz = pytz.timezone("Europe/Warsaw")
-current_time = datetime.now(polish_tz)
+URL = "https://www.trojmiasto.pl/wiadomosci/rss.xml"
 
-# Funkcja do formatowania daty w polskim formacie
-def format_date(date):
-    return date.strftime("%d %B %Y, %H:%M")
+def format_polish_date(date):
+    months = {
+        1: "stycznia", 2: "lutego", 3: "marca", 4: "kwietnia",
+        5: "maja", 6: "czerwca", 7: "lipca", 8: "sierpnia",
+        9: "września", 10: "października", 11: "listopada", 12: "grudnia"
+    }
+    return f"{date.day} {months[date.month]} {date.year}, {date.strftime('%H:%M')}"
 
-# Sprawdzenie, czy plik XML istnieje
-if not os.path.exists("trojmiasto_rss.xml"):
-    print("Plik XML nie istnieje.")
-else:
-    print(f"Plik XML znajduje się w: {os.path.abspath('trojmiasto_rss.xml')}")
+def fetch_and_parse_feed():
+    response = requests.get(URL)
+    response.raise_for_status()
+    return BeautifulSoup(response.content, features="xml")
 
-# Twoja logika do pobierania danych
-response = requests.get("https://example.com/rss_feed.xml")  # Zmień URL na odpowiedni
+def generate_feed(items):
+    fg = FeedGenerator()
+    fg.id("https://www.trojmiasto.pl/")
+    fg.title("Wiadomości Trójmiasto.pl")
+    fg.link(href="https://www.trojmiasto.pl/", rel="alternate")
+    fg.language("pl")
+    fg.description("Automatycznie aktualizowany RSS z Trójmiasto.pl")
 
-if response.status_code == 200:
-    print("Pobrano dane RSS!")
-else:
-    print("Błąd pobierania danych!")
+    for item in items:
+        fe = fg.add_entry()
+        fe.id(item.guid.text)
+        fe.title(item.title.text)
+        fe.link(href=item.link.text)
+        fe.description(item.description.text)
+        pub_date = datetime.strptime(item.pubDate.text, "%a, %d %b %Y %H:%M:%S %z")
+        fe.pubDate(pub_date)
 
-# Generowanie pliku RSS
-fg = FeedGenerator()
-fg.title("Tytuł feedu")
-fg.link(href="http://example.com")
-fg.description("Opis feedu")
+    return fg
 
-# Dodawanie wpisów do feedu
-entry = fg.add_entry()
-entry.title("Przykładowy tytuł")
-entry.link(href="http://example.com/example-post")
-entry.description("Opis wpisu")
-entry.pubDate(current_time)  # Dodanie daty publikacji w polskim formacie
+def main():
+    soup = fetch_and_parse_feed()
+    items = soup.find_all("item")
 
-# Zapisz feed jako XML
-fg.rss_file("trojmiasto_rss.xml")
-print(f"Plik XML zapisany! {format_date(current_time)}")
+    fg = generate_feed(items)
+    fg.rss_file("trojmiasto_rss.xml")
+
+    print("Zapisano trojmiasto_rss.xml")
+    print("Data aktualizacji:", format_polish_date(datetime.now(pytz.timezone("Europe/Warsaw"))))
+
+if __name__ == "__main__":
+    main()
