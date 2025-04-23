@@ -1,52 +1,72 @@
 import requests
-from feedgen.feed import FeedGenerator
 from bs4 import BeautifulSoup
+from feedgen.feed import FeedGenerator
 from datetime import datetime
 import pytz
-
-URL = "https://www.trojmiasto.pl/wiadomosci/rss.xml"
-
-def format_polish_date(date):
-    months = {
-        1: "stycznia", 2: "lutego", 3: "marca", 4: "kwietnia",
-        5: "maja", 6: "czerwca", 7: "lipca", 8: "sierpnia",
-        9: "września", 10: "października", 11: "listopada", 12: "grudnia"
-    }
-    return f"{date.day} {months[date.month]} {date.year}, {date.strftime('%H:%M')}"
+import re
 
 def fetch_and_parse_feed():
-    response = requests.get(URL)
+    url = "https://www.trojmiasto.pl/wiadomosci"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers)
     response.raise_for_status()
-    return BeautifulSoup(response.content, features="xml")
+    return BeautifulSoup(response.text, "html.parser")
 
-def generate_feed(items):
+def parse_articles(soup):
+    articles = []
+    entries = soup.select("div.news-list h3 a")
+
+    for entry in entries:
+        title = entry.get_text(strip=True)
+        link = "https://www.trojmiasto.pl" + entry.get("href")
+
+        # Spróbuj wyciągnąć datę publikacji z sąsiadującego elementu
+        parent = entry.find_parent("li") or entry.find_parent("article")
+        date_text = parent.select_one(".news-date, .list-article__date")
+        if date_text:
+            pub_date = parse_polish_date(date_text.get_text(strip=True))
+        else:
+            pub_date = datetime.now(pytz.timezone("Europe/Warsaw"))
+
+        articles.append({"title": title, "link": link, "pubDate": pub_date})
+
+    return articles
+
+def parse_polish_date(date_str):
+    months = {
+        "stycznia": "01", "lutego": "02", "marca": "03", "kwietnia": "04",
+        "maja": "05", "czerwca": "06", "lipca": "07", "sierpnia": "08",
+        "września": "09", "października": "10", "listopada": "11", "grudnia": "12"
+    }
+
+    match = re.search(r"(\d{1,2})\s+(\w+)\s+(\d{4})", date_str)
+    if match:
+        day, month_pl, year = match.groups()
+        month = months.get(month_pl.lower())
+        if month:
+            dt_str = f"{year}-{month}-{int(day):02d} 12:00"
+            return pytz.timezone("Europe/Warsaw").localize(datetime.strptime(dt_str, "%Y-%m-%d %H:%M"))
+    return datetime.now(pytz.timezone("Europe/Warsaw"))
+
+def generate_rss(articles):
     fg = FeedGenerator()
-    fg.id("https://www.trojmiasto.pl/")
-    fg.title("Wiadomości Trójmiasto.pl")
-    fg.link(href="https://www.trojmiasto.pl/", rel="alternate")
+    fg.title("3city Wiadomości")
+    fg.link(href="https://www.trojmiasto.pl/wiadomosci", rel="alternate")
+    fg.description("Najnowsze wiadomości z Trójmiasta - wygenerowane przez bota")
     fg.language("pl")
-    fg.description("Automatycznie aktualizowany RSS z Trójmiasto.pl")
 
-    for item in items:
+    for article in articles:
         fe = fg.add_entry()
-        fe.id(item.guid.text)
-        fe.title(item.title.text)
-        fe.link(href=item.link.text)
-        fe.description(item.description.text)
-        pub_date = datetime.strptime(item.pubDate.text, "%a, %d %b %Y %H:%M:%S %z")
-        fe.pubDate(pub_date)
+        fe.title(article["title"])
+        fe.link(href=article["link"])
+        fe.pubDate(article["pubDate"])
 
-    return fg
+    fg.rss_file("trojmiasto_rss.xml")
 
 def main():
     soup = fetch_and_parse_feed()
-    items = soup.find_all("item")
-
-    fg = generate_feed(items)
-    fg.rss_file("trojmiasto_rss.xml")
-
-    print("Zapisano trojmiasto_rss.xml")
-    print("Data aktualizacji:", format_polish_date(datetime.now(pytz.timezone("Europe/Warsaw"))))
+    articles = parse_articles(soup)
+    generate_rss(articles)
 
 if __name__ == "__main__":
     main()
