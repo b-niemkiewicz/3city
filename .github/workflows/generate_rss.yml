@@ -26,6 +26,9 @@ jobs:
     - name: Run Python script
       run: python trojmiasto_rss.py
 
+    - name: Pokaż zawartość pliku RSS
+      run: cat trojmiasto_rss.xml
+
     - name: Commit RSS file
       env:
         TOKEN: ${{ secrets.PAT_TOKEN }}
