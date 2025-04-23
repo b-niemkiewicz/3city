@@ -25,3 +25,10 @@ jobs:
 
       - name: Uruchom skrypt aktualizacji
         run: python trojmiasto_rss.py
+      - name: Zapisz plik XML do repo
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add trojmiasto_rss.xml
+          git commit -m "Dodano wygenerowany plik RSS"
+          git push
