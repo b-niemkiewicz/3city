@@ -1,37 +1,31 @@
-name: Aktualizacja RSS
+name: RSS Update Workflow
 
 on:
-  schedule:
-    - cron: '0 * * * *'  # uruchamiane co godzinę
-  workflow_dispatch:  # umożliwia ręczne uruchomienie
+  push:
+    branches:
+      - main
 
 jobs:
   update-rss:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout repo
+      # Check out the repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Ustaw Python 3.10
-        uses: actions/setup-python@v5
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.10'  # Upewnij się, że używasz wersji, którą chcesz
 
-      - name: Instaluj zależności
-        run: pip install -r requirements.txt
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Uruchom skrypt aktualizacji RSS
+      # Run the update script
+      - name: Run update script
         run: python trojmiasto_rss.py
-
-      - name: Konfiguracja GIT
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "bot@github.com"
-          git remote set-url origin https://x-access-token:${{ secrets.TOKEN }}@github.com/b-niemkiewicz/3city
-
-      - name: Dodaj i wypchnij zmiany
-        run: |
-          git add trojmiasto_rss.xml debug_trojmiasto.html
-          git commit -m "Automatyczna aktualizacja RSS $(date)" || echo "Brak zmian"
-          git push
