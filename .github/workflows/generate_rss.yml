@@ -1,36 +1,37 @@
-name: Generate RSS Feed
+name: Aktualizacja RSS
 
 on:
   schedule:
-    - cron: "0 6,18 * * *"  # dwa razy dziennie: 6:00 i 18:00 UTC
-  workflow_dispatch:
+    - cron: '0 * * * *'  # Co godzinę
+  workflow_dispatch:     # Możliwość ręcznego odpalenia
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      TOKEN: ${{ secrets.PAT_TOKEN }}
+
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
 
-    - name: Install dependencies
-      run: pip install requests beautifulsoup4 feedgen
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-    - name: Run Python script
-      run: python trojmiasto_rss.py
+      - name: Run RSS generator
+        run: python trojmiasto_rss.py
 
-    - name: Commit RSS file
-  env:
-    TOKEN: ${{ secrets.PAT_TOKEN }}
-  run: |
-    git config user.name "GitHub Actions Bot"
-    git config user.email "bot@github.com"
-    git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
-    git add trojmiasto_rss.xml debug_trojmiasto.html
-    git commit -m "Automatyczna aktualizacja RSS $(date)" || echo "Brak zmian"
-    git push
+      - name: Commit RSS file
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "bot@github.com"
+          git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
+          git add trojmiasto_rss.xml debug_trojmiasto.html
+          git commit -m "Automatyczna aktualizacja RSS $(date)" || echo "Brak zmian"
+          git push
