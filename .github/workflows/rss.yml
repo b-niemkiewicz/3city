@@ -37,4 +37,4 @@ jobs:
           git config user.email "github-actions@github.com"
           git add trojmiasto_rss.xml
           git commit -m "Dodano wygenerowany plik RSS"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
