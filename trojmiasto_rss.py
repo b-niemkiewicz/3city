@@ -19,7 +19,7 @@ else:
     print(f"Plik XML znajduje się w: {os.path.abspath('trojmiasto_rss.xml')}")
 
 # Twoja logika do pobierania danych
-response = requests.get("https://example.com/rss_feed.xml")
+response = requests.get("https://example.com/rss_feed.xml")  # Zmień URL na odpowiedni
 
 if response.status_code == 200:
     print("Pobrano dane RSS!")
