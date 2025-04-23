@@ -1,18 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
-from datetime import datetime
+from datetime import datetime, timezone
 import locale
 
-# Ustawienie polskiego języka dla dat (jeśli działa na Twoim systemie)
+# Ustawienie polskiego języka (może nie działać w GitHub Actions)
 try:
     locale.setlocale(locale.LC_TIME, "pl_PL.UTF-8")
 except locale.Error:
-    pass  # dla GitHub Actions i Windowsa może nie działać
+    pass
 
 URL = "https://www.trojmiasto.pl/wiadomosci/"
-
-from datetime import datetime, timezone
 
 def parse_polish_date(date_str):
     months = {
@@ -20,7 +18,6 @@ def parse_polish_date(date_str):
         'maja': '05', 'czerwca': '06', 'lipca': '07', 'sierpnia': '08',
         'września': '09', 'października': '10', 'listopada': '11', 'grudnia': '12'
     }
-
     parts = date_str.strip().split()
     if len(parts) == 3:
         day, month_name, year = parts
@@ -28,15 +25,21 @@ def parse_polish_date(date_str):
         if month:
             dt = datetime.strptime(f"{day}.{month}.{year}", "%d.%m.%Y")
             return dt.replace(tzinfo=timezone.utc)
-
-    return datetime.now(timezone.utc)  # fallback z UTC
+    return datetime.now(timezone.utc)
 
 def fetch_articles():
-    response = requests.get(URL)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+    }
+    response = requests.get(URL, headers=headers)
+    
+    # Zapisz HTML do podglądu w logach
+    with open("debug_trojmiasto.html", "w", encoding="utf-8") as f:
+        f.write(response.text)
+
     soup = BeautifulSoup(response.text, 'html.parser')
     articles = []
 
-    # wybieramy artykuły
     for item in soup.select('article.newsList__article')[:15]:
         title_tag = item.select_one('h4.newsList__title a')
         desc_tag = item.select_one('p.newsList__desc')
@@ -50,7 +53,7 @@ def fetch_articles():
         link = title_tag['href']
         description = desc_tag.get_text(strip=True) if desc_tag else ''
         image = img_tag['src'] if img_tag else ''
-        pub_date = parse_polish_date(date_tag.text.strip()) if date_tag else datetime.now()
+        pub_date = parse_polish_date(date_tag.text.strip()) if date_tag else datetime.now(timezone.utc)
 
         articles.append({
             'title': title,
@@ -62,7 +65,6 @@ def fetch_articles():
 
     print(f"Znaleziono {len(articles)} artykułów.")
     return articles
-
 
 def generate_rss(articles):
     fg = FeedGenerator()
@@ -84,4 +86,6 @@ def generate_rss(articles):
 
 if __name__ == "__main__":
     articles = fetch_articles()
+    if not articles:
+        print("UWAGA: Nie znaleziono żadnych artykułów. Sprawdź zawartość debug_trojmiasto.html.")
     generate_rss(articles)
