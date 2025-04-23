@@ -26,12 +26,11 @@ jobs:
 
     - name: Commit RSS file
       env:
-        TOKEN: ${{ secrets.PAT_TOKEN }}  # Używamy PAT_TOKEN z GitHub Secrets
+        TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         git config user.name "GitHub Actions Bot"
         git config user.email "bot@github.com"
         git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
-        git pull --rebase
         git add trojmiasto_rss.xml debug_trojmiasto.html
         git commit -m "Automatyczna aktualizacja RSS $(date)" || echo "Brak zmian"
         git push
