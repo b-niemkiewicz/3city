@@ -1,5 +1,11 @@
 name: Update RSS
 
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+
 on:
   schedule:
     - cron: '0 10 * * *'  # codziennie o 10:00 UTC
